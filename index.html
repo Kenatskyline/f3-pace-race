@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <meta name="description" content="A mobile-first F3 team pace race app." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.svg" />
+  <link rel="stylesheet" href="./css/styles.css" />
+  <title>F3 Pace Race</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">F3 PACE RACE</p>
+        <h1>Out & Back</h1>
+      </div>
+      <button id="motionButton" class="text-button" type="button">Enable 3D</button>
+    </header>
+
+    <section class="race-summary card">
+      <div>
+        <span class="label">Course</span>
+        <strong>2 miles out · 2 miles back</strong>
+      </div>
+      <div>
+        <span class="label">Segments</span>
+        <strong>16 × ¼ mile</strong>
+      </div>
+    </section>
+
+    <section class="stopwatch-stage" aria-label="Pace spinner">
+      <div id="watchTilt" class="watch-tilt">
+        <div class="watch-shadow"></div>
+        <div class="watch">
+          <div class="watch-crown"></div>
+          <div class="watch-glass"></div>
+          <div class="watch-face">
+            <div class="tick-ring"></div>
+            <div class="brand-mark" aria-label="F3 logo placeholder">F3</div>
+            <div id="teamName" class="team-name">GAZELLES</div>
+            <div id="paceDisplay" class="pace-display">--:--</div>
+            <div class="pace-unit">PER MILE</div>
+            <div id="needle" class="needle">
+              <span class="needle-tip"></span>
+            </div>
+            <div class="hub"></div>
+          </div>
+          <div class="watch-highlight"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls card">
+      <div class="segmented" role="group" aria-label="Select team">
+        <button class="team-button active" data-team="gazelles" type="button">Gazelles</button>
+        <button class="team-button" data-team="clydesdales" type="button">Clydesdales</button>
+      </div>
+      <button id="spinButton" class="primary-button" type="button">Spin Pace</button>
+    </section>
+
+    <section class="tracker card">
+      <div class="tracker-header">
+        <div>
+          <span class="label">Live race status</span>
+          <strong>Quarter-mile check-ins</strong>
+        </div>
+        <button id="resetButton" class="text-button danger" type="button">Reset</button>
+      </div>
+
+      <article class="team-track">
+        <div class="track-meta">
+          <span>Gazelles</span>
+          <strong><span id="gazellesCount">0</span>/16</strong>
+        </div>
+        <div class="track-line">
+          <div id="gazellesProgress" class="track-progress"></div>
+          <div id="gazellesMarker" class="track-marker" aria-hidden="true"></div>
+        </div>
+        <button class="checkin-button" data-checkin="gazelles" type="button">Gazelles +¼</button>
+      </article>
+
+      <article class="team-track">
+        <div class="track-meta">
+          <span>Clydesdales</span>
+          <strong><span id="clydesdalesCount">0</span>/16</strong>
+        </div>
+        <div class="track-line">
+          <div id="clydesdalesProgress" class="track-progress"></div>
+          <div id="clydesdalesMarker" class="track-marker" aria-hidden="true"></div>
+        </div>
+        <button class="checkin-button" data-checkin="clydesdales" type="button">Clydesdales +¼</button>
+      </article>
+    </section>
+
+    <section class="last-spins card">
+      <span class="label">Current assignments</span>
+      <div class="assignment-grid">
+        <div><span>Gazelles</span><strong id="gazellesPace">--:--</strong></div>
+        <div><span>Clydesdales</span><strong id="clydesdalesPace">--:--</strong></div>
+      </div>
+    </section>
+
+    <footer>
+      Captain confirms the full team before every check-in.
+    </footer>
+  </main>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
