@@ -42,14 +42,14 @@ export class SetupScreen {
           <label>Checkpoint spacing (miles)
             <input required name="checkpointSpacingMiles" type="number" min="0.05" step="0.05" value="0.25" />
           </label>
-          <label>Race duration (minutes)
-            <input required name="raceDurationMin" type="number" min="5" max="180" step="1" value="40" />
+          <label for="raceDurationMin">Race duration (minutes)
+            <input id="raceDurationMin" required name="raceDurationMin" type="number" min="5" max="180" step="1" value="40" />
           </label>
-          <label>Gazelle interval distance (miles)
-            <input required name="gazelleIntervalMiles" type="number" min="0.05" step="0.05" value="0.25" />
+          <label for="gazelleIntervalMiles">Gazelle interval distance (miles)
+            <input id="gazelleIntervalMiles" required name="gazelleIntervalMiles" type="number" min="0.05" step="0.05" value="0.25" />
           </label>
-          <label>Gazelle randomness
-            <select name="gazelleRandomnessLevel">
+          <label for="gazelleRandomnessLevel">Gazelle randomness
+            <select id="gazelleRandomnessLevel" name="gazelleRandomnessLevel">
               <option value="mild">Mild</option>
               <option value="moderate" selected>Moderate</option>
               <option value="chaotic">Chaotic</option>
@@ -62,10 +62,10 @@ export class SetupScreen {
                 <div class="team-controls-row">
                   <strong>${phase.label}</strong>
                   <label>Min
-                    <input name="gazellePhaseMin_${phase.key}" type="number" min="300" max="1200" step="5" value="${phase.min}" required />
+                    <input name="gazellePhaseMin_${phase.key}" type="number" min="300" max="1200" step="5" value="${phase.min}" aria-label="${phase.label} minimum pace seconds per mile" required />
                   </label>
                   <label>Max
-                    <input name="gazellePhaseMax_${phase.key}" type="number" min="300" max="1200" step="5" value="${phase.max}" required />
+                    <input name="gazellePhaseMax_${phase.key}" type="number" min="300" max="1200" step="5" value="${phase.max}" aria-label="${phase.label} maximum pace seconds per mile" required />
                   </label>
                 </div>
               `).join('')}
@@ -144,7 +144,6 @@ export class SetupScreen {
         gazellePacing: {
           intervalMiles: Number(formData.get('gazelleIntervalMiles')),
           randomnessLevel: String(formData.get('gazelleRandomnessLevel')),
-          chaoticMode: String(formData.get('gazelleRandomnessLevel')) === 'chaotic',
           phaseRanges: GAZELLE_PHASES.reduce((acc, phase) => {
             const min = Number(formData.get(`gazellePhaseMin_${phase.key}`));
             const max = Number(formData.get(`gazellePhaseMax_${phase.key}`));

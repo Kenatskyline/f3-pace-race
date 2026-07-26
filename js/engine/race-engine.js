@@ -17,6 +17,13 @@ const MODE_WEIGHTS = {
 const MODE_MAX_TARGET_JUMP = { mild: 16, moderate: 28, chaotic: 48 };
 const MODE_BLOCK_CHANCE = { mild: 0.16, moderate: 0.22, chaotic: 0.2 };
 const DEFAULT_INTERVAL_MILES = 0.25;
+// Limits catch-up updates when multiple interval thresholds are crossed in one frame.
+const MAX_PHASE_CHANGES_PER_TICK = 8;
+const MAX_RECENT_PHASES = 6;
+const MINI_BLOCK_SHORT_LENGTH = 2;
+const MINI_BLOCK_LONG_LENGTH = 3;
+const MINI_BLOCK_SHORT_RATIO = 0.45;
+const MINI_BLOCK_BUILD_MODE_PROBABILITY = 0.5;
 
 export class RaceEngine {
   constructor(raceState) {
@@ -188,14 +195,15 @@ export class RaceEngine {
     this.state.teams.forEach((team) => {
       if (team.paused || team.finishedAt) return;
 
-       this.updateGazellePacing(team);
+      this.updateGazellePacing(team);
 
       const paceDiff = team.targetPaceSec - team.currentPaceSec;
       const paceStep = clamp(paceDiff, -maxPaceStep, maxPaceStep);
       team.currentPaceSec += paceStep;
 
       const progressMiles = deltaSec / Math.max(1, team.currentPaceSec);
-      team.distanceMiles += progressMiles;
+      const nextDistance = team.distanceMiles + progressMiles;
+      team.distanceMiles = Math.min(this.state.race.totalDistanceMiles, nextDistance);
       team.movingTimeSec += deltaSec;
 
       const checkpoint = calculateCheckpoint(team.distanceMiles, this.state.race.checkpointSpacingMiles, this.state.race.totalDistanceMiles);
@@ -213,7 +221,8 @@ export class RaceEngine {
     if (!pacing?.enabled) return;
 
     const intervalMiles = Math.max(0.05, pacing.intervalMiles || DEFAULT_INTERVAL_MILES);
-    while (team.distanceMiles >= pacing.nextChangeDistanceMiles) {
+    let phaseChangeCount = 0;
+    while (team.distanceMiles >= pacing.nextChangeDistanceMiles && phaseChangeCount < MAX_PHASE_CHANGES_PER_TICK) {
       const nextPhase = this.selectStructuredPhase(team, pacing);
       const rawTarget = this.randomPaceInRange(pacing.phaseRanges[nextPhase], team.minPaceSec, team.maxPaceSec);
       const mode = pacing.randomnessLevel ?? 'moderate';
@@ -226,7 +235,7 @@ export class RaceEngine {
 
       team.targetPaceSec = nextTarget;
       pacing.currentPhase = nextPhase;
-      pacing.recentPhases = [...pacing.recentPhases, nextPhase].slice(-6);
+      pacing.recentPhases = [...pacing.recentPhases, nextPhase].slice(-MAX_RECENT_PHASES);
       pacing.nextChangeDistanceMiles += intervalMiles;
 
       this.logEvent('gazelle_phase_changed', {
@@ -235,25 +244,36 @@ export class RaceEngine {
         targetPaceSec: nextTarget,
         nextChangeDistanceMiles: pacing.nextChangeDistanceMiles
       });
+
+      phaseChangeCount += 1;
     }
   }
 
   selectStructuredPhase(team, pacing) {
     const mode = pacing.randomnessLevel ?? 'moderate';
-    const chaoticMode = pacing.chaoticMode || mode === 'chaotic';
+    const chaoticMode = mode === 'chaotic';
     const recent = pacing.recentPhases ?? [];
     const previous = recent[recent.length - 1] ?? 'comfortable';
     const beforePrevious = recent[recent.length - 2] ?? null;
 
-    if (Array.isArray(pacing.pendingBlock) && pacing.pendingBlock.length > 0) {
+    if (pacing.pendingBlock.length > 0) {
       const nextInBlock = pacing.pendingBlock.shift();
       if (this.isPhaseAllowed(previous, beforePrevious, nextInBlock, chaoticMode)) {
         return nextInBlock;
       }
+      this.logEvent('gazelle_block_cleared', { teamId: team.id, blockedPhase: nextInBlock });
       pacing.pendingBlock = [];
     }
 
+    const weights = this.buildPhaseWeights(mode, previous, beforePrevious, chaoticMode);
+    const phase = this.weightedPick(weights, (candidate) => this.isPhaseAllowed(previous, beforePrevious, candidate, chaoticMode));
+    this.maybeCreateMiniBlock(pacing, mode, phase);
+    return phase;
+  }
+
+  buildPhaseWeights(mode, previous, beforePrevious, chaoticMode) {
     const weights = { ...(MODE_WEIGHTS[mode] ?? MODE_WEIGHTS.moderate) };
+
     if (previous === 'push') {
       weights.recovery *= 2.2;
       weights.hardPush *= 0.5;
@@ -280,9 +300,7 @@ export class RaceEngine {
       weights.hardPush = 0;
     }
 
-    const phase = this.weightedPick(weights, (candidate) => this.isPhaseAllowed(previous, beforePrevious, candidate, chaoticMode));
-    this.maybeCreateMiniBlock(pacing, mode, phase);
-    return phase;
+    return weights;
   }
 
   maybeCreateMiniBlock(pacing, mode, currentPhase) {
@@ -290,8 +308,8 @@ export class RaceEngine {
     if (Math.random() > chance) return;
 
     const pending = [];
-    const blockLength = Math.random() < 0.45 ? 2 : 3;
-    const buildMode = Math.random() < 0.5;
+    const blockLength = Math.random() < MINI_BLOCK_SHORT_RATIO ? MINI_BLOCK_SHORT_LENGTH : MINI_BLOCK_LONG_LENGTH;
+    const buildMode = Math.random() < MINI_BLOCK_BUILD_MODE_PROBABILITY;
 
     if (buildMode) {
       const index = PHASES.indexOf(currentPhase);

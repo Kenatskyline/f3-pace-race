@@ -8,26 +8,23 @@ const DEFAULT_GAZELLE_PHASE_RANGES = {
   hardPush: { min: 390, max: 470 }
 };
 
-function isGazelleTeam(teamConfig, index) {
-  if (typeof teamConfig?.name === 'string' && teamConfig.name.toLowerCase().includes('gazelle')) {
-    return true;
-  }
-  return index === 0;
+function isGazelleTeam(teamConfig) {
+  return typeof teamConfig?.name === 'string' && teamConfig.name.toLowerCase().includes('gazelle');
 }
 
 function normalizePhaseRanges(rawRanges, teamConfig) {
   return Object.entries(DEFAULT_GAZELLE_PHASE_RANGES).reduce((acc, [phaseKey, defaults]) => {
     const source = rawRanges?.[phaseKey] ?? defaults;
-    const min = clamp(Math.min(source.min, source.max), teamConfig.minPaceSec, teamConfig.maxPaceSec);
-    const max = clamp(Math.max(source.min, source.max), teamConfig.minPaceSec, teamConfig.maxPaceSec);
-    acc[phaseKey] = { min, max: Math.max(min, max) };
+    const low = clamp(Math.min(source.min, source.max), teamConfig.minPaceSec, teamConfig.maxPaceSec);
+    const high = clamp(Math.max(source.min, source.max), teamConfig.minPaceSec, teamConfig.maxPaceSec);
+    acc[phaseKey] = { min: Math.min(low, high), max: Math.max(low, high) };
     return acc;
   }, {});
 }
 
-function createTeamState(teamConfig, checkpointSpacingMiles, index, gazelleConfig) {
+function createTeamState(teamConfig, checkpointSpacingMiles, gazelleConfig) {
   const initialPace = clamp(teamConfig.overridePaceSec ?? teamConfig.minPaceSec, teamConfig.minPaceSec, teamConfig.maxPaceSec);
-  const gazelleEnabled = isGazelleTeam(teamConfig, index);
+  const gazelleEnabled = isGazelleTeam(teamConfig);
   const randomnessLevel = gazelleConfig?.randomnessLevel ?? 'moderate';
   const intervalMiles = Math.max(0.05, gazelleConfig?.intervalMiles ?? 0.25);
   const phaseRanges = normalizePhaseRanges(gazelleConfig?.phaseRanges, teamConfig);
@@ -52,7 +49,6 @@ function createTeamState(teamConfig, checkpointSpacingMiles, index, gazelleConfi
     gazellePacing: {
       enabled: gazelleEnabled,
       randomnessLevel,
-      chaoticMode: gazelleConfig?.chaoticMode ?? randomnessLevel === 'chaotic',
       intervalMiles,
       phaseRanges,
       currentPhase: 'comfortable',
@@ -92,7 +88,7 @@ export function createRaceState(config) {
       checkpointCount,
       durationSec: Math.max(300, Number(config.raceDurationSec) || 40 * 60)
     },
-    teams: config.teams.map((team, index) => createTeamState(team, config.checkpointSpacingMiles, index, config.gazellePacing)),
+    teams: config.teams.map((team) => createTeamState(team, config.checkpointSpacingMiles, config.gazellePacing)),
     eventLog
   };
 }
