@@ -143,12 +143,16 @@ function defaultPaceRanges() {
   };
 }
 
+function isStepAlignedPace(value) {
+  return Number.isInteger(value) && clampPace(value) === value;
+}
+
 function isValidRanges(ranges) {
   return ['gazelles', 'clydesdales'].every((team) => {
     const min = ranges?.[team]?.min;
     const max = ranges?.[team]?.max;
-    const minValid = Number.isInteger(min) && min % CONFIG.paceStep === 0 && min >= CONFIG.globalMinPace;
-    const maxValid = Number.isInteger(max) && max % CONFIG.paceStep === 0 && max <= CONFIG.globalMaxPace;
+    const minValid = isStepAlignedPace(min);
+    const maxValid = isStepAlignedPace(max);
     return minValid && maxValid && min <= max;
   });
 }
@@ -204,7 +208,7 @@ function generatePace(team) {
   random = Math.pow(random, config.weightFactor);
 
   const pace = minPace + (random * range);
-  const steppedPace = Math.round(pace / CONFIG.paceStep) * CONFIG.paceStep;
+  const steppedPace = clampPace(pace);
 
   return Math.max(minPace, Math.min(maxPace, steppedPace));
 }
@@ -547,8 +551,14 @@ function loadState() {
   const savedClydesdalesPace = localStorage.getItem(CONFIG.storageKeys.clydesdalesPace);
   const savedPhase = localStorage.getItem(CONFIG.storageKeys.workoutPhase);
 
-  if (savedGazellesCount !== null) state.gazellesCount = parseInt(savedGazellesCount, 10) || 0;
-  if (savedClydesdalesCount !== null) state.clydesdalesCount = parseInt(savedClydesdalesCount, 10) || 0;
+  if (savedGazellesCount !== null) {
+    const parsed = parseInt(savedGazellesCount, 10);
+    if (Number.isFinite(parsed)) state.gazellesCount = parsed;
+  }
+  if (savedClydesdalesCount !== null) {
+    const parsed = parseInt(savedClydesdalesCount, 10);
+    if (Number.isFinite(parsed)) state.clydesdalesCount = parsed;
+  }
   if (savedGazellesPace !== null && savedGazellesPace !== 'null') state.gazellesPace = parseInt(savedGazellesPace, 10);
   if (savedClydesdalesPace !== null && savedClydesdalesPace !== 'null') state.clydesdalesPace = parseInt(savedClydesdalesPace, 10);
 
