@@ -69,7 +69,7 @@ const state = {
   deviceGamma: 0
 };
 
-const DEFAULT_RANGE_ERROR = 'Fastest pace must be faster than or equal to slowest pace.';
+const INVALID_RANGE_ERROR = 'Fastest pace must be faster than or equal to slowest pace.';
 
 // ========== DOM Elements ==========
 
@@ -191,7 +191,7 @@ function canPerform(action, team = null) {
   return false;
 }
 
-function showHidden(element, shouldShow) {
+function setVisibility(element, shouldShow) {
   element.classList.toggle('hidden', !shouldShow);
 }
 
@@ -317,9 +317,9 @@ function updatePaceRangeDisplays() {
 function validatePaceRanges(showError = true) {
   const valid = isValidRanges(state.paceRanges);
   if (!valid) {
-    elements.setupError.textContent = DEFAULT_RANGE_ERROR;
+    elements.setupError.textContent = INVALID_RANGE_ERROR;
   }
-  showHidden(elements.setupError, showError && !valid);
+  setVisibility(elements.setupError, showError && !valid);
   return valid;
 }
 
@@ -355,10 +355,10 @@ function updatePhaseUI() {
   elements.phaseLabel.textContent = message.label;
   elements.phaseHint.textContent = message.hint;
 
-  showHidden(elements.startWorkoutButton, state.workoutPhase === CONFIG.workoutPhases.notStarted || state.workoutPhase === CONFIG.workoutPhases.ended);
-  showHidden(elements.joinWorkoutButton, state.workoutPhase === CONFIG.workoutPhases.waitingSq);
-  showHidden(elements.endWorkoutButton, state.workoutPhase === CONFIG.workoutPhases.inProgress);
-  showHidden(elements.setupWorkoutButton, canPerform('setup'));
+  setVisibility(elements.startWorkoutButton, state.workoutPhase === CONFIG.workoutPhases.notStarted || state.workoutPhase === CONFIG.workoutPhases.ended);
+  setVisibility(elements.joinWorkoutButton, state.workoutPhase === CONFIG.workoutPhases.waitingSq);
+  setVisibility(elements.endWorkoutButton, state.workoutPhase === CONFIG.workoutPhases.inProgress);
+  setVisibility(elements.setupWorkoutButton, canPerform('setup'));
 
   elements.qRoleButton.classList.toggle('active', state.activeRole === 'q');
   elements.sqRoleButton.classList.toggle('active', state.activeRole === 'sq');
@@ -388,9 +388,9 @@ function updatePhaseUI() {
   elements.setupWorkoutButton.disabled = !canPerform('setup');
 
   const shouldShowSetup = state.workoutPhase === CONFIG.workoutPhases.paceSetup || state.workoutPhase === CONFIG.workoutPhases.routeConfirm;
-  showHidden(elements.setupOverlay, shouldShowSetup);
-  showHidden(elements.paceSetupStep, state.workoutPhase === CONFIG.workoutPhases.paceSetup);
-  showHidden(elements.routeConfirmStep, state.workoutPhase === CONFIG.workoutPhases.routeConfirm);
+  setVisibility(elements.setupOverlay, shouldShowSetup);
+  setVisibility(elements.paceSetupStep, state.workoutPhase === CONFIG.workoutPhases.paceSetup);
+  setVisibility(elements.routeConfirmStep, state.workoutPhase === CONFIG.workoutPhases.routeConfirm);
 }
 
 // ========== Setup Workflow ==========
@@ -438,9 +438,9 @@ function adjustPaceRange(target, direction) {
   updatePaceRangeDisplays();
   if (constrainedMessage) {
     elements.setupError.textContent = constrainedMessage;
-    showHidden(elements.setupError, true);
+    setVisibility(elements.setupError, true);
   } else {
-    elements.setupError.textContent = DEFAULT_RANGE_ERROR;
+    elements.setupError.textContent = INVALID_RANGE_ERROR;
     validatePaceRanges(false);
   }
 }
@@ -517,11 +517,11 @@ function applyRoleOverride() {
   const sqTeam = elements.sqTeamOverride.value;
 
   if (qTeam === sqTeam) {
-    showHidden(elements.advancedError, true);
+    setVisibility(elements.advancedError, true);
     return;
   }
 
-  showHidden(elements.advancedError, false);
+  setVisibility(elements.advancedError, false);
   state.roleAssignments = { q: qTeam, sq: sqTeam };
   state.roleOverrideEnabled = true;
 
@@ -535,7 +535,7 @@ function applyRoleOverride() {
 }
 
 function clearRoleOverride() {
-  showHidden(elements.advancedError, false);
+  setVisibility(elements.advancedError, false);
   state.roleAssignments = { q: 'gazelles', sq: 'clydesdales' };
   state.roleOverrideEnabled = false;
   elements.qTeamOverride.value = 'gazelles';
@@ -612,7 +612,7 @@ function loadPaceRanges() {
     const parsed = JSON.parse(raw);
     state.paceRanges = isValidRanges(parsed) ? parsed : defaultPaceRanges();
   } catch (error) {
-    console.warn('Invalid stored pace ranges. Using defaults.', error);
+    console.warn('Failed to parse stored pace ranges. Using default pace ranges.', error);
     state.paceRanges = defaultPaceRanges();
   }
 }
@@ -642,7 +642,7 @@ function loadRoleOverride() {
     elements.qTeamOverride.value = qTeam;
     elements.sqTeamOverride.value = sqTeam;
   } catch (error) {
-    console.warn('Invalid role override config. Using defaults.', error);
+    console.warn('Failed to parse stored role override. Keeping default Q→Gazelles and SQ→Clydesdales.', error);
   }
 }
 
