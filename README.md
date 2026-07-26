@@ -2,23 +2,36 @@
 
 A mobile-first installable web app for a two-team, four-mile out-and-back pace race.
 
-## Current prototype
+## Current app
 
-- Gazelles and Clydesdales team selection
-- Team-specific weighted pace ranges
-- Quarter-mile check-ins
+- Fixed leadership roles:
+  - **Q** leads Gazelles at the 12 o'clock/front position and controls workout setup/start/end, Gazelles spin/check-in, undo/correction, and reset.
+  - **SQ** leads Clydesdales at the 6 o'clock/rear position and controls Clydesdales spin/check-in.
+- Guided setup flow:
+  1. Start workout
+  2. Set pace ranges
+  3. Confirm fixed 4-mile route (2 out, 2 back, 16 × ¼ mile)
+  4. Open SQ slot
+  5. SQ joins and workout begins
+- Team-specific weighted pace ranges with adjustable limits
+- Quarter-mile check-ins with undo for corrections
 - Shared line-style race status
-- 16 total segments for a 4-mile workout
 - 3D motion-reactive stopwatch on supported phones
 - Local persistence with `localStorage`
 - Installable PWA and offline shell
 
-## Pace ranges
+## Adjustable pace ranges (minutes per mile)
 
-- Gazelles: **7:00–11:00 per mile**
-- Clydesdales: **9:00–13:00 per mile**
+Default ranges:
 
-The distributions overlap. A Gazelle can draw a slower pace than a Clydesdale. A modest catch-up adjustment helps the trailing team without guaranteeing a result.
+- Gazelles: **7:00 (fastest) to 11:00 (slowest)**
+- Clydesdales: **9:00 (fastest) to 13:00 (slowest)**
+
+Setup uses 30-second increments with validation (`fastest <= slowest`). The spinner always stays inside each team range while keeping existing weighted balancing. Last-used ranges are saved and reloaded from `localStorage`, and you can reset ranges to defaults during setup.
+
+## Advanced testing override
+
+A secondary **Advanced testing overrides** panel allows manual Q/SQ team remapping for testing scenarios. Normal mode keeps fixed Q→Gazelles and SQ→Clydesdales assignments.
 
 ## Run locally
 

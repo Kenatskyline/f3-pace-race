@@ -20,6 +20,27 @@
       <button id="motionButton" class="text-button" type="button">Enable 3D</button>
     </header>
 
+    <section class="workflow card">
+      <div class="tracker-header">
+        <div>
+          <span class="label">Workout flow</span>
+          <strong id="phaseLabel">Not started</strong>
+        </div>
+        <button id="resetButton" class="text-button danger" type="button">Reset</button>
+      </div>
+      <p id="phaseHint" class="phase-hint">Q starts the workout and sets pace ranges.</p>
+      <div class="role-switch segmented" role="group" aria-label="Active role">
+        <button id="qRoleButton" class="team-button active" data-role="q" type="button">Q</button>
+        <button id="sqRoleButton" class="team-button" data-role="sq" type="button" disabled>SQ</button>
+      </div>
+      <div class="workflow-actions">
+        <button id="startWorkoutButton" class="primary-button" type="button">Start Workout</button>
+        <button id="setupWorkoutButton" class="text-button hidden" type="button">Setup Controls</button>
+        <button id="joinWorkoutButton" class="primary-button hidden" type="button">Join Workout (SQ)</button>
+        <button id="endWorkoutButton" class="text-button danger hidden" type="button">End Workout</button>
+      </div>
+    </section>
+
     <section class="race-summary card">
       <div>
         <span class="label">Course</span>
@@ -58,7 +79,30 @@
         <button class="team-button active" data-team="gazelles" type="button">Gazelles</button>
         <button class="team-button" data-team="clydesdales" type="button">Clydesdales</button>
       </div>
-      <button id="spinButton" class="primary-button" type="button">Spin Pace</button>
+      <div class="workflow-actions">
+        <button class="checkin-button spin-button" data-spin-team="gazelles" type="button">Spin Gazelles Pace</button>
+        <button class="checkin-button spin-button" data-spin-team="clydesdales" type="button">Spin Clydesdales Pace</button>
+      </div>
+      <details class="advanced-controls">
+        <summary>Advanced testing overrides</summary>
+        <div class="advanced-grid">
+          <label>Q team
+            <select id="qTeamOverride">
+              <option value="gazelles">Gazelles</option>
+              <option value="clydesdales">Clydesdales</option>
+            </select>
+          </label>
+          <label>SQ team
+            <select id="sqTeamOverride">
+              <option value="clydesdales">Clydesdales</option>
+              <option value="gazelles">Gazelles</option>
+            </select>
+          </label>
+          <button id="applyOverrideButton" class="text-button" type="button">Apply Override</button>
+          <button id="clearOverrideButton" class="text-button danger" type="button">Reset Roles</button>
+        </div>
+        <p id="advancedError" class="setup-error hidden">Q and SQ must map to different teams.</p>
+      </details>
     </section>
 
     <section class="tracker card">
@@ -67,7 +111,6 @@
           <span class="label">Live race status</span>
           <strong>Quarter-mile check-ins</strong>
         </div>
-        <button id="resetButton" class="text-button danger" type="button">Reset</button>
       </div>
 
       <article class="team-track">
@@ -79,7 +122,10 @@
           <div id="gazellesProgress" class="track-progress"></div>
           <div id="gazellesMarker" class="track-marker" aria-hidden="true"></div>
         </div>
-        <button class="checkin-button" data-checkin="gazelles" type="button">Gazelles +¼</button>
+        <div class="workflow-actions">
+          <button class="checkin-button" data-checkin="gazelles" type="button">Gazelles +¼</button>
+          <button class="text-button undo-button" data-undo-team="gazelles" type="button">Undo</button>
+        </div>
       </article>
 
       <article class="team-track">
@@ -91,7 +137,10 @@
           <div id="clydesdalesProgress" class="track-progress"></div>
           <div id="clydesdalesMarker" class="track-marker" aria-hidden="true"></div>
         </div>
-        <button class="checkin-button" data-checkin="clydesdales" type="button">Clydesdales +¼</button>
+        <div class="workflow-actions">
+          <button class="checkin-button" data-checkin="clydesdales" type="button">Clydesdales +¼</button>
+          <button class="text-button undo-button" data-undo-team="clydesdales" type="button">Undo</button>
+        </div>
       </article>
     </section>
 
@@ -107,6 +156,61 @@
       Captain confirms the full team before every check-in.
     </footer>
   </main>
+
+  <div id="setupOverlay" class="setup-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <section class="setup-modal card">
+      <h2 id="setupTitle">Set pace ranges (minutes per mile)</h2>
+      <p id="setupDescription">Q sets the fastest and slowest pace per team in 30-second increments per mile.</p>
+      <div id="paceSetupStep">
+        <div class="pace-range-grid">
+          <div class="pace-range-row">
+            <span>Gazelles fastest</span>
+            <div class="pace-range-control">
+              <button class="text-button pace-adjust" data-target="gazelles-min" data-direction="-1" type="button">−</button>
+              <strong id="gazellesMinDisplay">7:00 / mile</strong>
+              <button class="text-button pace-adjust" data-target="gazelles-min" data-direction="1" type="button">+</button>
+            </div>
+          </div>
+          <div class="pace-range-row">
+            <span>Gazelles slowest</span>
+            <div class="pace-range-control">
+              <button class="text-button pace-adjust" data-target="gazelles-max" data-direction="-1" type="button">−</button>
+              <strong id="gazellesMaxDisplay">11:00 / mile</strong>
+              <button class="text-button pace-adjust" data-target="gazelles-max" data-direction="1" type="button">+</button>
+            </div>
+          </div>
+          <div class="pace-range-row">
+            <span>Clydesdales fastest</span>
+            <div class="pace-range-control">
+              <button class="text-button pace-adjust" data-target="clydesdales-min" data-direction="-1" type="button">−</button>
+              <strong id="clydesdalesMinDisplay">9:00 / mile</strong>
+              <button class="text-button pace-adjust" data-target="clydesdales-min" data-direction="1" type="button">+</button>
+            </div>
+          </div>
+          <div class="pace-range-row">
+            <span>Clydesdales slowest</span>
+            <div class="pace-range-control">
+              <button class="text-button pace-adjust" data-target="clydesdales-max" data-direction="-1" type="button">−</button>
+              <strong id="clydesdalesMaxDisplay">13:00 / mile</strong>
+              <button class="text-button pace-adjust" data-target="clydesdales-max" data-direction="1" type="button">+</button>
+            </div>
+          </div>
+        </div>
+        <p id="setupError" class="setup-error hidden">Fastest pace must be faster than or equal to slowest pace.</p>
+        <div class="workflow-actions">
+          <button id="resetRangesButton" class="text-button" type="button">Reset to defaults</button>
+          <button id="continueSetupButton" class="primary-button" type="button">Continue</button>
+        </div>
+      </div>
+      <div id="routeConfirmStep" class="hidden">
+        <p class="route-copy">Route is fixed at 4 miles total: 2 miles out, 2 miles back, 16 quarter-mile intervals.</p>
+        <div class="workflow-actions">
+          <button id="backToPaceButton" class="text-button" type="button">Back</button>
+          <button id="confirmRouteButton" class="primary-button" type="button">Open Clydesdales/SQ Slot</button>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <script type="module" src="./js/app.js"></script>
 </body>
