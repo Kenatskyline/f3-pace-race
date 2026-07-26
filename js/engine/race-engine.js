@@ -203,7 +203,9 @@ export class RaceEngine {
 
       const progressMiles = deltaSec / Math.max(1, team.currentPaceSec);
       const nextDistance = team.distanceMiles + progressMiles;
-      team.distanceMiles = Math.min(this.state.race.totalDistanceMiles, nextDistance);
+      team.distanceMiles = team.gazellePacing?.enabled
+        ? nextDistance
+        : Math.min(this.state.race.totalDistanceMiles, nextDistance);
       team.movingTimeSec += deltaSec;
 
       const checkpoint = calculateCheckpoint(team.distanceMiles, this.state.race.checkpointSpacingMiles, this.state.race.totalDistanceMiles);

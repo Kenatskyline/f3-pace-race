@@ -90,16 +90,18 @@ export class UIController {
   }
 
   renderSecondaryWatch(snapshot) {
+    const gazelleTeam = snapshot.teams.find((team) => team.gazellePacing?.enabled || team.role === 'Q');
     const leadTeam = [...snapshot.teams].sort((a, b) => b.distanceMiles - a.distanceMiles)[0];
-    if (!leadTeam) return;
+    const watchTeam = gazelleTeam ?? leadTeam;
+    if (!watchTeam) return;
 
-    this.watchTeam.textContent = leadTeam.name.toUpperCase();
-    this.watchPace.textContent = formatPace(leadTeam.currentPaceSec);
+    this.watchTeam.textContent = watchTeam.role ? `${watchTeam.role} · ${watchTeam.name.toUpperCase()}` : watchTeam.name.toUpperCase();
+    this.watchPace.textContent = formatPace(watchTeam.currentPaceSec);
 
     const minPace = Math.min(...snapshot.teams.map((team) => team.minPaceSec));
     const maxPace = Math.max(...snapshot.teams.map((team) => team.maxPaceSec));
     const paceRange = Math.max(1, maxPace - minPace);
-    const rotation = ((leadTeam.currentPaceSec - minPace) / paceRange) * 360;
+    const rotation = ((watchTeam.currentPaceSec - minPace) / paceRange) * 360;
     this.watchNeedle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
   }
 

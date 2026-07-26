@@ -12,6 +12,15 @@ function isGazelleTeam(teamConfig) {
   return typeof teamConfig?.name === 'string' && teamConfig.name.toLowerCase().includes('gazelle');
 }
 
+function inferTeamRole(teamConfig, teamIndex) {
+  const normalizedName = String(teamConfig?.name ?? '').toLowerCase();
+  if (normalizedName.includes('gazelle')) return 'Q';
+  if (normalizedName.includes('clydesdale')) return 'SQ';
+  if (teamIndex === 0) return 'Q';
+  if (teamIndex === 1) return 'SQ';
+  return null;
+}
+
 function normalizePhaseRanges(rawRanges, teamConfig) {
   return Object.entries(DEFAULT_GAZELLE_PHASE_RANGES).reduce((acc, [phaseKey, defaults]) => {
     const source = rawRanges?.[phaseKey] ?? defaults;
@@ -22,16 +31,18 @@ function normalizePhaseRanges(rawRanges, teamConfig) {
   }, {});
 }
 
-function createTeamState(teamConfig, checkpointSpacingMiles, gazelleConfig) {
+function createTeamState(teamConfig, checkpointSpacingMiles, gazelleConfig, teamIndex) {
   const initialPace = clamp(teamConfig.overridePaceSec ?? teamConfig.minPaceSec, teamConfig.minPaceSec, teamConfig.maxPaceSec);
   const gazelleEnabled = isGazelleTeam(teamConfig);
   const randomnessLevel = gazelleConfig?.randomnessLevel ?? 'moderate';
   const intervalMiles = Math.max(0.05, gazelleConfig?.intervalMiles ?? 0.25);
   const phaseRanges = normalizePhaseRanges(gazelleConfig?.phaseRanges, teamConfig);
+  const role = inferTeamRole(teamConfig, teamIndex);
 
   return {
     id: teamConfig.id,
     name: teamConfig.name,
+    role,
     color: teamConfig.color,
     minPaceSec: teamConfig.minPaceSec,
     maxPaceSec: teamConfig.maxPaceSec,
@@ -88,7 +99,7 @@ export function createRaceState(config) {
       checkpointCount,
       durationSec: Math.max(300, Number(config.raceDurationSec) || 40 * 60)
     },
-    teams: config.teams.map((team) => createTeamState(team, config.checkpointSpacingMiles, config.gazellePacing)),
+    teams: config.teams.map((team, index) => createTeamState(team, config.checkpointSpacingMiles, config.gazellePacing, index)),
     eventLog
   };
 }
