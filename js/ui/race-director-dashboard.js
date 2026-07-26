@@ -3,6 +3,12 @@ import { milesToDisplay } from '../utils/calculations.js';
 
 const PACE_STEP = 5;
 
+function formatPosition(team, totalDistanceMiles) {
+  const percent = (team.distanceMiles / Math.max(0.01, totalDistanceMiles)) * 100;
+  if (team.gazellePacing?.enabled) return `${percent.toFixed(1)}%`;
+  return `${Math.min(100, percent).toFixed(1)}%`;
+}
+
 export class RaceDirectorDashboard {
   constructor(container, callbacks) {
     this.container = container;
@@ -61,7 +67,7 @@ export class RaceDirectorDashboard {
           <div><span class="label">Gap</span><strong data-role="gap">${formatDuration(Math.abs(team.gapSeconds))} ${team.gapSeconds >= 0 ? 'ahead' : 'behind'}</strong></div>
           <div><span class="label">Average pace</span><strong data-role="average-pace">${formatPace(team.averagePaceSec)}</strong></div>
           <div><span class="label">Time gained/lost</span><strong data-role="delta">${team.cumulativeTimeDeltaSec >= 0 ? '+' : '-'}${formatDuration(Math.abs(team.cumulativeTimeDeltaSec))}</strong></div>
-          <div><span class="label">Position</span><strong data-role="position">${Math.min(100, (team.distanceMiles / snapshot.race.totalDistanceMiles * 100)).toFixed(1)}%</strong></div>
+          <div><span class="label">Position</span><strong data-role="position">${formatPosition(team, snapshot.race.totalDistanceMiles)}</strong></div>
           <div><span class="label">Phase</span><strong data-role="phase">${team.gazellePacing?.currentPhaseLabel ?? '--'}</strong></div>
           <div><span class="label">Next change @</span><strong data-role="next-change">${team.gazellePacing?.enabled ? milesToDisplay(team.gazellePacing.nextChangeDistanceMiles) : '--'}</strong></div>
           <div><span class="label">Recent phases</span><strong data-role="phase-sequence">${team.gazellePacing?.recentPhaseLabels?.join(' → ') ?? '--'}</strong></div>
@@ -105,7 +111,7 @@ export class RaceDirectorDashboard {
       panel.querySelector('[data-role="gap"]').textContent = `${formatDuration(Math.abs(team.gapSeconds))} ${team.gapSeconds >= 0 ? 'ahead' : 'behind'}`;
       panel.querySelector('[data-role="average-pace"]').textContent = formatPace(team.averagePaceSec);
       panel.querySelector('[data-role="delta"]').textContent = `${team.cumulativeTimeDeltaSec >= 0 ? '+' : '-'}${formatDuration(Math.abs(team.cumulativeTimeDeltaSec))}`;
-      panel.querySelector('[data-role="position"]').textContent = `${Math.min(100, (team.distanceMiles / snapshot.race.totalDistanceMiles * 100)).toFixed(1)}%`;
+      panel.querySelector('[data-role="position"]').textContent = formatPosition(team, snapshot.race.totalDistanceMiles);
       panel.querySelector('[data-role="phase"]').textContent = team.gazellePacing?.currentPhaseLabel ?? '--';
       panel.querySelector('[data-role="next-change"]').textContent = team.gazellePacing?.enabled ? milesToDisplay(team.gazellePacing.nextChangeDistanceMiles) : '--';
       panel.querySelector('[data-role="phase-sequence"]').textContent = team.gazellePacing?.recentPhaseLabels?.join(' → ') ?? '--';
