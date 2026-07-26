@@ -249,6 +249,14 @@ export class RaceEngine {
 
       phaseChangeCount += 1;
     }
+
+    if (phaseChangeCount === MAX_PHASE_CHANGES_PER_TICK && team.distanceMiles >= pacing.nextChangeDistanceMiles) {
+      this.logEvent('gazelle_phase_change_cap_reached', {
+        teamId: team.id,
+        distanceMiles: team.distanceMiles,
+        nextChangeDistanceMiles: pacing.nextChangeDistanceMiles
+      });
+    }
   }
 
   selectStructuredPhase(team, pacing) {
@@ -263,7 +271,11 @@ export class RaceEngine {
       if (this.isPhaseAllowed(previous, beforePrevious, nextInBlock, chaoticMode)) {
         return nextInBlock;
       }
-      this.logEvent('gazelle_block_cleared', { teamId: team.id, blockedPhase: nextInBlock });
+      this.logEvent('gazelle_block_cleared', {
+        teamId: team.id,
+        blockedPhase: nextInBlock,
+        remainingBlock: [...pacing.pendingBlock]
+      });
       pacing.pendingBlock = [];
     }
 
