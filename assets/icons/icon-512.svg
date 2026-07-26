@@ -1,0 +1,47 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="watchGradient512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2a2a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#0a0a0a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="accentGlow512" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#00a8cc;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#080808"/>
+  <ellipse cx="256" cy="420" rx="180" ry="40" fill="#00d4ff" opacity="0.15" filter="blur(20px)"/>
+  <circle cx="256" cy="256" r="220" fill="url(#watchGradient512)" stroke="#1a1a1a" stroke-width="4"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#3a3a3a" stroke-width="6" opacity="0.5"/>
+  <circle cx="256" cy="256" r="200" fill="#0a0a0a" stroke="#1a1a1a" stroke-width="2"/>
+  <g stroke="#3a3a3a" stroke-width="4" stroke-linecap="round">
+    <line x1="256" y1="70" x2="256" y2="100"/>
+    <line x1="442" y1="256" x2="412" y2="256"/>
+    <line x1="256" y1="442" x2="256" y2="412"/>
+    <line x1="70" y1="256" x2="100" y2="256"/>
+    <line x1="336" y1="88" x2="328" y2="110" opacity="0.7"/>
+    <line x1="402" y1="154" x2="388" y2="172" opacity="0.7"/>
+    <line x1="424" y1="258" x2="400" y2="264" opacity="0.7"/>
+    <line x1="402" y1="358" x2="388" y2="340" opacity="0.7"/>
+    <line x1="336" y1="424" x2="328" y2="402" opacity="0.7"/>
+    <line x1="176" y1="424" x2="184" y2="402" opacity="0.7"/>
+    <line x1="110" y1="358" x2="124" y2="340" opacity="0.7"/>
+    <line x1="88" y1="258" x2="112" y2="264" opacity="0.7"/>
+    <line x1="110" y1="154" x2="124" y2="172" opacity="0.7"/>
+    <line x1="176" y1="88" x2="184" y2="110" opacity="0.7"/>
+  </g>
+  <text x="256" y="130" font-size="52" font-weight="900" fill="#00d4ff" text-anchor="middle" font-family="system-ui, sans-serif">F3</text>
+  <text x="256" y="300" font-size="20" font-weight="700" fill="#a0a0a0" text-anchor="middle" font-family="system-ui, sans-serif">GAZELLES</text>
+  <text x="256" y="360" font-size="70" font-weight="900" fill="#00d4ff" text-anchor="middle" font-family="monospace" opacity="0.95">7:45</text>
+  <text x="256" y="385" font-size="16" font-weight="600" fill="#a0a0a0" text-anchor="middle" font-family="system-ui, sans-serif" opacity="0.8">PER MILE</text>
+  <g transform="translate(256, 256) rotate(-45)">
+    <rect x="-6" y="-130" width="12" height="130" fill="url(#accentGlow512)" rx="3" filter="drop-shadow(0 0 8px #00d4ff)"/>
+    <circle cx="0" cy="0" r="12" fill="#2a2a2a" stroke="#00d4ff" stroke-width="2"/>
+  </g>
+  <circle cx="256" cy="256" r="12" fill="#2a2a2a" stroke="#00d4ff" stroke-width="2"/>
+  <circle cx="256" cy="256" r="195" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="3" opacity="0.5"/>
+  <ellipse cx="200" cy="180" rx="60" ry="40" fill="rgba(255, 255, 255, 0.05)"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#00d4ff" stroke-width="2" opacity="0.15"/>
+  <rect x="242" y="15" width="28" height="16" rx="4" fill="#3a3a3a" stroke="#2a2a2a" stroke-width="1"/>
+</svg>
