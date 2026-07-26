@@ -3,7 +3,7 @@ import { createRaceState, serializeRaceState } from '../engine/race-state.js';
 import { CourseVisualization } from './course-visualization.js';
 import { RaceDirectorDashboard } from './race-director-dashboard.js';
 import { SetupScreen } from './setup-screen.js';
-import { formatPace } from '../utils/time-utils.js';
+import { formatDuration, formatPace } from '../utils/time-utils.js';
 
 const STORAGE_KEY = 'f3-race-director-state';
 
@@ -115,6 +115,7 @@ export class UIController {
         </div>
         <div class="race-meta-grid">
           <div><span class="label">Leader</span><strong>${top ? top.name : '--'}</strong></div>
+          <div><span class="label">Time remaining</span><strong>${formatDuration(snapshot.remainingSec)}</strong></div>
           <div><span class="label">Event log entries</span><strong>${snapshot.eventLog.length}</strong></div>
           <div><span class="label">Sync ready</span><strong>${snapshot.sessionId} + ${snapshot.deviceId}</strong></div>
         </div>

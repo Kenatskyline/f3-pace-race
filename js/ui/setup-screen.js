@@ -6,6 +6,13 @@ const DEFAULT_PACE_BOUNDS = [
   { min: 420, max: 660 },
   { min: 540, max: 780 }
 ];
+const GAZELLE_PHASES = [
+  { key: 'recovery', label: 'Recovery', min: 560, max: 660 },
+  { key: 'comfortable', label: 'Comfortable', min: 500, max: 600 },
+  { key: 'steady', label: 'Steady', min: 460, max: 540 },
+  { key: 'push', label: 'Push', min: 420, max: 500 },
+  { key: 'hardPush', label: 'Hard Push', min: 390, max: 470 }
+];
 
 function getDefaultTeamName(index) {
   return DEFAULT_TEAM_NAMES[index] ?? `Team ${index + 1}`;
@@ -35,6 +42,35 @@ export class SetupScreen {
           <label>Checkpoint spacing (miles)
             <input required name="checkpointSpacingMiles" type="number" min="0.05" step="0.05" value="0.25" />
           </label>
+          <label>Race duration (minutes)
+            <input required name="raceDurationMin" type="number" min="5" max="180" step="1" value="40" />
+          </label>
+          <label>Gazelle interval distance (miles)
+            <input required name="gazelleIntervalMiles" type="number" min="0.05" step="0.05" value="0.25" />
+          </label>
+          <label>Gazelle randomness
+            <select name="gazelleRandomnessLevel">
+              <option value="mild">Mild</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="chaotic">Chaotic</option>
+            </select>
+          </label>
+          <fieldset>
+            <legend>Gazelle phase pace ranges (sec/mi)</legend>
+            <div class="team-config-list">
+              ${GAZELLE_PHASES.map((phase) => `
+                <div class="team-controls-row">
+                  <strong>${phase.label}</strong>
+                  <label>Min
+                    <input name="gazellePhaseMin_${phase.key}" type="number" min="300" max="1200" step="5" value="${phase.min}" required />
+                  </label>
+                  <label>Max
+                    <input name="gazellePhaseMax_${phase.key}" type="number" min="300" max="1200" step="5" value="${phase.max}" required />
+                  </label>
+                </div>
+              `).join('')}
+            </div>
+          </fieldset>
           <label>Number of teams
             <input required name="teamCount" type="number" min="2" max="4" value="2" />
           </label>
@@ -104,6 +140,21 @@ export class SetupScreen {
       this.onStart({
         totalDistanceMiles: Number(formData.get('totalDistanceMiles')),
         checkpointSpacingMiles: Number(formData.get('checkpointSpacingMiles')),
+        raceDurationSec: Number(formData.get('raceDurationMin')) * 60,
+        gazellePacing: {
+          intervalMiles: Number(formData.get('gazelleIntervalMiles')),
+          randomnessLevel: String(formData.get('gazelleRandomnessLevel')),
+          chaoticMode: String(formData.get('gazelleRandomnessLevel')) === 'chaotic',
+          phaseRanges: GAZELLE_PHASES.reduce((acc, phase) => {
+            const min = Number(formData.get(`gazellePhaseMin_${phase.key}`));
+            const max = Number(formData.get(`gazellePhaseMax_${phase.key}`));
+            acc[phase.key] = {
+              min: Math.min(min, max),
+              max: Math.max(min, max)
+            };
+            return acc;
+          }, {})
+        },
         teams
       });
     });

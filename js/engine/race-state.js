@@ -1,7 +1,36 @@
 import { clamp } from '../utils/calculations.js';
 
-function createTeamState(teamConfig, checkpointSpacingMiles) {
+const DEFAULT_GAZELLE_PHASE_RANGES = {
+  recovery: { min: 560, max: 660 },
+  comfortable: { min: 500, max: 600 },
+  steady: { min: 460, max: 540 },
+  push: { min: 420, max: 500 },
+  hardPush: { min: 390, max: 470 }
+};
+
+function isGazelleTeam(teamConfig, index) {
+  if (typeof teamConfig?.name === 'string' && teamConfig.name.toLowerCase().includes('gazelle')) {
+    return true;
+  }
+  return index === 0;
+}
+
+function normalizePhaseRanges(rawRanges, teamConfig) {
+  return Object.entries(DEFAULT_GAZELLE_PHASE_RANGES).reduce((acc, [phaseKey, defaults]) => {
+    const source = rawRanges?.[phaseKey] ?? defaults;
+    const min = clamp(Math.min(source.min, source.max), teamConfig.minPaceSec, teamConfig.maxPaceSec);
+    const max = clamp(Math.max(source.min, source.max), teamConfig.minPaceSec, teamConfig.maxPaceSec);
+    acc[phaseKey] = { min, max: Math.max(min, max) };
+    return acc;
+  }, {});
+}
+
+function createTeamState(teamConfig, checkpointSpacingMiles, index, gazelleConfig) {
   const initialPace = clamp(teamConfig.overridePaceSec ?? teamConfig.minPaceSec, teamConfig.minPaceSec, teamConfig.maxPaceSec);
+  const gazelleEnabled = isGazelleTeam(teamConfig, index);
+  const randomnessLevel = gazelleConfig?.randomnessLevel ?? 'moderate';
+  const intervalMiles = Math.max(0.05, gazelleConfig?.intervalMiles ?? 0.25);
+  const phaseRanges = normalizePhaseRanges(gazelleConfig?.phaseRanges, teamConfig);
 
   return {
     id: teamConfig.id,
@@ -19,7 +48,18 @@ function createTeamState(teamConfig, checkpointSpacingMiles) {
     checkpointIndex: 0,
     cumulativeTimeDeltaSec: 0,
     paceAdjustments: 0,
-    checkpointSpacingMiles
+    checkpointSpacingMiles,
+    gazellePacing: {
+      enabled: gazelleEnabled,
+      randomnessLevel,
+      chaoticMode: gazelleConfig?.chaoticMode ?? randomnessLevel === 'chaotic',
+      intervalMiles,
+      phaseRanges,
+      currentPhase: 'comfortable',
+      nextChangeDistanceMiles: intervalMiles,
+      recentPhases: ['comfortable'],
+      pendingBlock: []
+    }
   };
 }
 
@@ -49,9 +89,10 @@ export function createRaceState(config) {
     race: {
       totalDistanceMiles: config.totalDistanceMiles,
       checkpointSpacingMiles: config.checkpointSpacingMiles,
-      checkpointCount
+      checkpointCount,
+      durationSec: Math.max(300, Number(config.raceDurationSec) || 40 * 60)
     },
-    teams: config.teams.map((team) => createTeamState(team, config.checkpointSpacingMiles)),
+    teams: config.teams.map((team, index) => createTeamState(team, config.checkpointSpacingMiles, index, config.gazellePacing)),
     eventLog
   };
 }

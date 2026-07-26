@@ -5,9 +5,12 @@ A mobile-first installable web app for controlling a live F3 pace race in real t
 ## What it does now
 
 - Pre-race setup for total distance, checkpoint spacing, team count, names, colors, and pace bounds
+- Gazelle structured-random pacing modes (Mild/Moderate/Chaotic) with editable phase pace ranges
 - Live race director dashboard with per-team pace controls (+/-), pause/resume, reset, and manual checkpoint correction
 - Continuous race telemetry per team:
   - current distance (miles + feet)
+  - current Gazelle phase + recent phase sequence
+  - next Gazelle change distance
   - checkpoint index
   - distance remaining
   - estimated finish time
@@ -16,6 +19,7 @@ A mobile-first installable web app for controlling a live F3 pace race in real t
   - cumulative time gained/lost from pace changes
 - Horizontal course visualization with quarter-mile style checkpoints, turnaround marker, and animated team markers
 - Secondary watch display that tracks the current leader pace
+- Shared race-duration timer (default 40 minutes) that controls race completion
 - Supabase-ready race state shape with `session_id`, `device_id`, and `event_log`
 
 ## Architecture

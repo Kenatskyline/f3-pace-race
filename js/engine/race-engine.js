@@ -1,6 +1,22 @@
 import { calculateCheckpoint, calculateGapSeconds, clamp } from '../utils/calculations.js';
 
 const PACE_TRANSITION_RATE = 12;
+const PHASES = ['recovery', 'comfortable', 'steady', 'push', 'hardPush'];
+const PHASE_LABELS = {
+  recovery: 'Recovery',
+  comfortable: 'Comfortable',
+  steady: 'Steady',
+  push: 'Push',
+  hardPush: 'Hard Push'
+};
+const MODE_WEIGHTS = {
+  mild: { recovery: 1.2, comfortable: 4.2, steady: 3.8, push: 1.3, hardPush: 0.25 },
+  moderate: { recovery: 1.4, comfortable: 3.6, steady: 3.2, push: 2, hardPush: 0.8 },
+  chaotic: { recovery: 1.8, comfortable: 2.8, steady: 2.6, push: 2.2, hardPush: 1.8 }
+};
+const MODE_MAX_TARGET_JUMP = { mild: 16, moderate: 28, chaotic: 48 };
+const MODE_BLOCK_CHANCE = { mild: 0.16, moderate: 0.22, chaotic: 0.2 };
+const DEFAULT_INTERVAL_MILES = 0.25;
 
 export class RaceEngine {
   constructor(raceState) {
@@ -28,6 +44,8 @@ export class RaceEngine {
   getSnapshot() {
     const now = Date.now();
     const elapsedSec = this.state.startedAt ? (now - this.state.startedAt) / 1000 : 0;
+    const raceDurationSec = this.state.race.durationSec ?? 40 * 60;
+    const remainingSec = Math.max(0, raceDurationSec - elapsedSec);
 
     const teams = this.state.teams.map((team) => {
       const distanceRemainingMiles = Math.max(0, this.state.race.totalDistanceMiles - team.distanceMiles);
@@ -37,7 +55,14 @@ export class RaceEngine {
         ...team,
         distanceRemainingMiles,
         estimatedFinishAt: estFinishTime,
-        averagePaceSec
+        averagePaceSec,
+        gazellePacing: team.gazellePacing
+          ? {
+              ...team.gazellePacing,
+              currentPhaseLabel: PHASE_LABELS[team.gazellePacing.currentPhase] ?? PHASE_LABELS.comfortable,
+              recentPhaseLabels: team.gazellePacing.recentPhases.map((phase) => PHASE_LABELS[phase] ?? PHASE_LABELS.comfortable)
+            }
+          : null
       };
     });
 
@@ -53,6 +78,7 @@ export class RaceEngine {
       ...this.state,
       now,
       elapsedSec,
+      remainingSec,
       teams: teamsWithGaps
     };
   }
@@ -98,7 +124,16 @@ export class RaceEngine {
       paceAdjustments: 0,
       currentPaceSec: team.overridePaceSec ?? team.minPaceSec,
       targetPaceSec: team.overridePaceSec ?? team.minPaceSec,
-      checkpointSpacingMiles: spacing
+      checkpointSpacingMiles: spacing,
+      gazellePacing: team.gazellePacing
+        ? {
+            ...team.gazellePacing,
+            currentPhase: 'comfortable',
+            nextChangeDistanceMiles: team.gazellePacing.intervalMiles ?? DEFAULT_INTERVAL_MILES,
+            recentPhases: ['comfortable'],
+            pendingBlock: []
+          }
+        : null
     }));
     this.logEvent('race_reset');
     this.endLoop();
@@ -128,8 +163,22 @@ export class RaceEngine {
     const now = Date.now();
     const deltaSec = Math.max(0, (now - this.lastTickAt) / 1000);
     this.lastTickAt = now;
+    const raceDurationSec = this.state.race.durationSec ?? 40 * 60;
+    const elapsedSec = this.state.startedAt ? (now - this.state.startedAt) / 1000 : 0;
 
     if (this.state.status !== 'running' || deltaSec === 0) {
+      this.notify();
+      return;
+    }
+
+    if (elapsedSec >= raceDurationSec) {
+      this.state.status = 'results';
+      this.state.stoppedAt = now;
+      this.state.teams.forEach((team) => {
+        if (!team.finishedAt) team.finishedAt = now;
+      });
+      this.logEvent('race_finished', { reason: 'duration_elapsed' });
+      this.endLoop();
       this.notify();
       return;
     }
@@ -139,12 +188,14 @@ export class RaceEngine {
     this.state.teams.forEach((team) => {
       if (team.paused || team.finishedAt) return;
 
+       this.updateGazellePacing(team);
+
       const paceDiff = team.targetPaceSec - team.currentPaceSec;
       const paceStep = clamp(paceDiff, -maxPaceStep, maxPaceStep);
       team.currentPaceSec += paceStep;
 
       const progressMiles = deltaSec / Math.max(1, team.currentPaceSec);
-      team.distanceMiles = Math.min(this.state.race.totalDistanceMiles, team.distanceMiles + progressMiles);
+      team.distanceMiles += progressMiles;
       team.movingTimeSec += deltaSec;
 
       const checkpoint = calculateCheckpoint(team.distanceMiles, this.state.race.checkpointSpacingMiles, this.state.race.totalDistanceMiles);
@@ -152,21 +203,143 @@ export class RaceEngine {
         team.checkpointIndex = checkpoint;
         this.logEvent('checkpoint_crossed', { teamId: team.id, checkpointIndex: checkpoint });
       }
-
-      if (team.distanceMiles >= this.state.race.totalDistanceMiles && !team.finishedAt) {
-        team.finishedAt = now;
-        this.logEvent('team_finished', { teamId: team.id });
-      }
     });
 
-    if (this.state.teams.every((team) => team.finishedAt)) {
-      this.state.status = 'results';
-      this.state.stoppedAt = now;
-      this.logEvent('race_finished');
-      this.endLoop();
+    this.notify();
+  }
+
+  updateGazellePacing(team) {
+    const pacing = team.gazellePacing;
+    if (!pacing?.enabled) return;
+
+    const intervalMiles = Math.max(0.05, pacing.intervalMiles || DEFAULT_INTERVAL_MILES);
+    while (team.distanceMiles >= pacing.nextChangeDistanceMiles) {
+      const nextPhase = this.selectStructuredPhase(team, pacing);
+      const rawTarget = this.randomPaceInRange(pacing.phaseRanges[nextPhase], team.minPaceSec, team.maxPaceSec);
+      const mode = pacing.randomnessLevel ?? 'moderate';
+      const maxJump = MODE_MAX_TARGET_JUMP[mode] ?? MODE_MAX_TARGET_JUMP.moderate;
+      const nextTarget = clamp(
+        team.targetPaceSec + clamp(rawTarget - team.targetPaceSec, -maxJump, maxJump),
+        team.minPaceSec,
+        team.maxPaceSec
+      );
+
+      team.targetPaceSec = nextTarget;
+      pacing.currentPhase = nextPhase;
+      pacing.recentPhases = [...pacing.recentPhases, nextPhase].slice(-6);
+      pacing.nextChangeDistanceMiles += intervalMiles;
+
+      this.logEvent('gazelle_phase_changed', {
+        teamId: team.id,
+        phase: nextPhase,
+        targetPaceSec: nextTarget,
+        nextChangeDistanceMiles: pacing.nextChangeDistanceMiles
+      });
+    }
+  }
+
+  selectStructuredPhase(team, pacing) {
+    const mode = pacing.randomnessLevel ?? 'moderate';
+    const chaoticMode = pacing.chaoticMode || mode === 'chaotic';
+    const recent = pacing.recentPhases ?? [];
+    const previous = recent[recent.length - 1] ?? 'comfortable';
+    const beforePrevious = recent[recent.length - 2] ?? null;
+
+    if (Array.isArray(pacing.pendingBlock) && pacing.pendingBlock.length > 0) {
+      const nextInBlock = pacing.pendingBlock.shift();
+      if (this.isPhaseAllowed(previous, beforePrevious, nextInBlock, chaoticMode)) {
+        return nextInBlock;
+      }
+      pacing.pendingBlock = [];
     }
 
-    this.notify();
+    const weights = { ...(MODE_WEIGHTS[mode] ?? MODE_WEIGHTS.moderate) };
+    if (previous === 'push') {
+      weights.recovery *= 2.2;
+      weights.hardPush *= 0.5;
+    } else if (previous === 'hardPush') {
+      weights.recovery *= 3;
+      weights.push *= 0.6;
+      weights.hardPush *= 0.2;
+    } else if (previous === 'recovery') {
+      weights.comfortable *= 1.9;
+      weights.steady *= 1.5;
+    } else if (previous === 'comfortable') {
+      weights.steady *= 1.35;
+      weights.push *= 1.1;
+    } else if (previous === 'steady') {
+      weights.comfortable *= 1.2;
+      weights.push *= 1.25;
+    }
+
+    if (beforePrevious && previous === beforePrevious) {
+      weights[previous] = 0;
+    }
+
+    if (!chaoticMode && previous === 'recovery') {
+      weights.hardPush = 0;
+    }
+
+    const phase = this.weightedPick(weights, (candidate) => this.isPhaseAllowed(previous, beforePrevious, candidate, chaoticMode));
+    this.maybeCreateMiniBlock(pacing, mode, phase);
+    return phase;
+  }
+
+  maybeCreateMiniBlock(pacing, mode, currentPhase) {
+    const chance = MODE_BLOCK_CHANCE[mode] ?? MODE_BLOCK_CHANCE.moderate;
+    if (Math.random() > chance) return;
+
+    const pending = [];
+    const blockLength = Math.random() < 0.45 ? 2 : 3;
+    const buildMode = Math.random() < 0.5;
+
+    if (buildMode) {
+      const index = PHASES.indexOf(currentPhase);
+      for (let step = 1; step < blockLength; step += 1) {
+        const nextIndex = Math.min(PHASES.length - 1, index + step);
+        pending.push(PHASES[nextIndex]);
+      }
+    } else {
+      for (let step = 1; step < blockLength; step += 1) {
+        pending.push(currentPhase);
+      }
+    }
+
+    pacing.pendingBlock = pending;
+  }
+
+  weightedPick(weights, isAllowed) {
+    const candidates = PHASES
+      .filter((phase) => (weights[phase] ?? 0) > 0)
+      .filter((phase) => isAllowed(phase));
+
+    if (candidates.length === 0) {
+      return 'comfortable';
+    }
+
+    const total = candidates.reduce((sum, phase) => sum + (weights[phase] ?? 0), 0);
+    if (total <= 0) return candidates[0];
+
+    let roll = Math.random() * total;
+    for (const phase of candidates) {
+      roll -= weights[phase] ?? 0;
+      if (roll <= 0) return phase;
+    }
+    return candidates[candidates.length - 1];
+  }
+
+  isPhaseAllowed(previous, beforePrevious, candidate, chaoticMode) {
+    if (previous === candidate && beforePrevious === candidate) return false;
+    if (!chaoticMode && previous === 'recovery' && candidate === 'hardPush') return false;
+    return true;
+  }
+
+  randomPaceInRange(range, fallbackMin, fallbackMax) {
+    const min = range?.min ?? fallbackMin;
+    const max = range?.max ?? fallbackMax;
+    const low = Math.min(min, max);
+    const high = Math.max(min, max);
+    return low + (Math.random() * (high - low));
   }
 
   adjustPace(teamId, deltaSec) {
@@ -224,6 +397,12 @@ export class RaceEngine {
     team.cumulativeTimeDeltaSec = 0;
     team.currentPaceSec = team.overridePaceSec ?? team.minPaceSec;
     team.targetPaceSec = team.currentPaceSec;
+    if (team.gazellePacing) {
+      team.gazellePacing.currentPhase = 'comfortable';
+      team.gazellePacing.nextChangeDistanceMiles = team.gazellePacing.intervalMiles ?? DEFAULT_INTERVAL_MILES;
+      team.gazellePacing.recentPhases = ['comfortable'];
+      team.gazellePacing.pendingBlock = [];
+    }
 
     this.logEvent('team_reset', { teamId });
     this.notify();
