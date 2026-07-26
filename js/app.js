@@ -69,6 +69,8 @@ const state = {
   deviceGamma: 0
 };
 
+const DEFAULT_RANGE_ERROR = 'Fastest pace must be faster than or equal to slowest pace.';
+
 // ========== DOM Elements ==========
 
 const elements = {
@@ -314,6 +316,9 @@ function updatePaceRangeDisplays() {
 
 function validatePaceRanges(showError = true) {
   const valid = isValidRanges(state.paceRanges);
+  if (!valid) {
+    elements.setupError.textContent = DEFAULT_RANGE_ERROR;
+  }
   showHidden(elements.setupError, showError && !valid);
   return valid;
 }
@@ -407,17 +412,37 @@ function adjustPaceRange(target, direction) {
   const [team, bound] = target.split('-');
   const delta = direction * CONFIG.paceStep;
   const current = state.paceRanges[team][bound];
-  const adjusted = clampPace(current + delta);
+  const rawValue = current + delta;
+  const adjusted = clampPace(rawValue);
+  let constrainedMessage = '';
 
   if (bound === 'min') {
-    state.paceRanges[team].min = Math.min(adjusted, state.paceRanges[team].max);
+    const capped = Math.min(adjusted, state.paceRanges[team].max);
+    state.paceRanges[team].min = capped;
+    if (capped !== rawValue) {
+      constrainedMessage = rawValue > state.paceRanges[team].max
+        ? 'Fastest pace cannot be slower than the selected slowest pace.'
+        : `Pace must stay between ${formatPacePerMile(CONFIG.globalMinPace)} and ${formatPacePerMile(CONFIG.globalMaxPace)}.`;
+    }
   } else {
-    state.paceRanges[team].max = Math.max(adjusted, state.paceRanges[team].min);
+    const capped = Math.max(adjusted, state.paceRanges[team].min);
+    state.paceRanges[team].max = capped;
+    if (capped !== rawValue) {
+      constrainedMessage = rawValue < state.paceRanges[team].min
+        ? 'Slowest pace cannot be faster than the selected fastest pace.'
+        : `Pace must stay between ${formatPacePerMile(CONFIG.globalMinPace)} and ${formatPacePerMile(CONFIG.globalMaxPace)}.`;
+    }
   }
 
   savePaceRanges();
   updatePaceRangeDisplays();
-  validatePaceRanges(false);
+  if (constrainedMessage) {
+    elements.setupError.textContent = constrainedMessage;
+    showHidden(elements.setupError, true);
+  } else {
+    elements.setupError.textContent = DEFAULT_RANGE_ERROR;
+    validatePaceRanges(false);
+  }
 }
 
 function startWorkout() {
@@ -559,8 +584,14 @@ function loadState() {
     const parsed = parseInt(savedClydesdalesCount, 10);
     if (Number.isFinite(parsed)) state.clydesdalesCount = parsed;
   }
-  if (savedGazellesPace !== null && savedGazellesPace !== 'null') state.gazellesPace = parseInt(savedGazellesPace, 10);
-  if (savedClydesdalesPace !== null && savedClydesdalesPace !== 'null') state.clydesdalesPace = parseInt(savedClydesdalesPace, 10);
+  if (savedGazellesPace !== null && savedGazellesPace !== 'null') {
+    const parsed = parseInt(savedGazellesPace, 10);
+    if (Number.isFinite(parsed)) state.gazellesPace = parsed;
+  }
+  if (savedClydesdalesPace !== null && savedClydesdalesPace !== 'null') {
+    const parsed = parseInt(savedClydesdalesPace, 10);
+    if (Number.isFinite(parsed)) state.clydesdalesPace = parsed;
+  }
 
   const validPhase = Object.values(CONFIG.workoutPhases).includes(savedPhase) ? savedPhase : CONFIG.workoutPhases.notStarted;
   state.workoutPhase = validPhase;

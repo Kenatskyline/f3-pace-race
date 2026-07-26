@@ -5,8 +5,8 @@ A mobile-first installable web app for a two-team, four-mile out-and-back pace r
 ## Current app
 
 - Fixed leadership roles:
-  - **Q** leads Gazelles (12/front) and controls workout setup/start/end, Gazelles spin/check-in, undo/correction, and reset.
-  - **SQ** leads Clydesdales (6/rear) and controls Clydesdales spin/check-in.
+  - **Q** leads Gazelles at the 12 o'clock/front position and controls workout setup/start/end, Gazelles spin/check-in, undo/correction, and reset.
+  - **SQ** leads Clydesdales at the 6 o'clock/rear position and controls Clydesdales spin/check-in.
 - Guided setup flow:
   1. Start workout
   2. Set pace ranges
