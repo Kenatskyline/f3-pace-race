@@ -1,0 +1,62 @@
+<svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="watchGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2a2a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#0a0a0a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="accentGlow" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#00a8cc;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="192" height="192" fill="#080808"/>
+  
+  <!-- Watch Body -->
+  <circle cx="96" cy="96" r="90" fill="url(#watchGradient)" stroke="#1a1a1a" stroke-width="2"/>
+  
+  <!-- Watch Bezel -->
+  <circle cx="96" cy="96" r="85" fill="none" stroke="#3a3a3a" stroke-width="3" opacity="0.5"/>
+  
+  <!-- Watch Face -->
+  <circle cx="96" cy="96" r="78" fill="#0a0a0a" stroke="#1a1a1a" stroke-width="1"/>
+  
+  <!-- Tick Marks -->
+  <g stroke="#3a3a3a" stroke-width="2" stroke-linecap="round">
+    <!-- Major ticks at 12, 3, 6, 9 -->
+    <line x1="96" y1="28" x2="96" y2="38"/>
+    <line x1="164" y1="96" x2="154" y2="96"/>
+    <line x1="96" y1="164" x2="96" y2="154"/>
+    <line x1="28" y1="96" x2="38" y2="96"/>
+    
+    <!-- Minor ticks -->
+    <line x1="130" y1="36" x2="126" y2="43" opacity="0.7"/>
+    <line x1="156" y1="62" x2="150" y2="68" opacity="0.7"/>
+    <line x1="158" y1="130" x2="150" y2="124" opacity="0.7"/>
+    <line x1="130" y1="156" x2="126" y2="149" opacity="0.7"/>
+    <line x1="62" y1="158" x2="68" y2="150" opacity="0.7"/>
+    <line x1="36" y1="130" x2="42" y2="126" opacity="0.7"/>
+    <line x1="34" y1="62" x2="42" y2="68" opacity="0.7"/>
+    <line x1="62" y1="36" x2="66" y2="43" opacity="0.7"/>
+  </g>
+  
+  <!-- Brand Mark F3 -->
+  <text x="96" y="52" font-size="18" font-weight="900" fill="#00d4ff" text-anchor="middle" font-family="system-ui, sans-serif">F3</text>
+  
+  <!-- Pace Display -->
+  <text x="96" y="110" font-size="24" font-weight="900" fill="#00d4ff" text-anchor="middle" font-family="monospace" opacity="0.9">7:45</text>
+  
+  <!-- Needle -->
+  <g transform="translate(96, 96) rotate(-45)">
+    <rect x="-3" y="-50" width="6" height="50" fill="url(#accentGlow)" rx="2"/>
+    <circle cx="0" cy="0" r="5" fill="#2a2a2a" stroke="#00d4ff" stroke-width="1"/>
+  </g>
+  
+  <!-- Glass Reflection -->
+  <circle cx="96" cy="96" r="78" fill="none" stroke="rgba(255, 255, 255, 0.1)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Outer Ring Glow -->
+  <circle cx="96" cy="96" r="90" fill="none" stroke="#00d4ff" stroke-width="1" opacity="0.2"/>
+</svg>
