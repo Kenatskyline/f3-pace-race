@@ -1,5 +1,5 @@
 
-const CACHE = "f3-pace-race-v1";
+const CACHE = "f3-pace-race-v2";
 const ASSETS = [
   "./",
   "./index.html",
