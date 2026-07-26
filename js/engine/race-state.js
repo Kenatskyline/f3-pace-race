@@ -14,10 +14,10 @@ function isGazelleTeam(teamConfig) {
 
 function inferTeamRole(teamConfig, teamIndex) {
   const normalizedName = String(teamConfig?.name ?? '').toLowerCase();
-  if (teamIndex === 0) return 'Q';
-  if (teamIndex === 1) return 'SQ';
   if (normalizedName.includes('gazelle')) return 'Q';
   if (normalizedName.includes('clydesdale')) return 'SQ';
+  if (teamIndex === 0) return 'Q';
+  if (teamIndex === 1) return 'SQ';
   return null;
 }
 

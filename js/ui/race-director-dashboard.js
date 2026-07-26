@@ -5,6 +5,7 @@ const PACE_STEP = 5;
 
 function formatPosition(team, totalDistanceMiles) {
   const percent = (team.distanceMiles / Math.max(0.01, totalDistanceMiles)) * 100;
+  // Gazelles can exceed course distance before timer expiry; show uncapped progress for them.
   if (team.gazellePacing?.enabled) return `${percent.toFixed(1)}%`;
   return `${Math.min(100, percent).toFixed(1)}%`;
 }
