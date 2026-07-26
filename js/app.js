@@ -113,6 +113,7 @@ const elements = {
   clydesdalesMaxDisplay: document.getElementById('clydesdalesMaxDisplay'),
   qTeamOverride: document.getElementById('qTeamOverride'),
   sqTeamOverride: document.getElementById('sqTeamOverride'),
+  advancedError: document.getElementById('advancedError'),
   applyOverrideButton: document.getElementById('applyOverrideButton'),
   clearOverrideButton: document.getElementById('clearOverrideButton')
 };
@@ -120,7 +121,7 @@ const elements = {
 // ========== Utility Functions ==========
 
 function formatPace(seconds) {
-  if (seconds === null || seconds === undefined || Number.isNaN(seconds)) return '--:--';
+  if (!Number.isFinite(seconds)) return '--:--';
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
@@ -487,10 +488,11 @@ function applyRoleOverride() {
   const sqTeam = elements.sqTeamOverride.value;
 
   if (qTeam === sqTeam) {
-    window.alert('Q and SQ must map to different teams.');
+    showHidden(elements.advancedError, true);
     return;
   }
 
+  showHidden(elements.advancedError, false);
   state.roleAssignments = { q: qTeam, sq: sqTeam };
   state.roleOverrideEnabled = true;
 
@@ -504,6 +506,7 @@ function applyRoleOverride() {
 }
 
 function clearRoleOverride() {
+  showHidden(elements.advancedError, false);
   state.roleAssignments = { q: 'gazelles', sq: 'clydesdales' };
   state.roleOverrideEnabled = false;
   elements.qTeamOverride.value = 'gazelles';
