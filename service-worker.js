@@ -1,4 +1,4 @@
-const CACHE = 'f3-pace-race-v2';
+const CACHE = 'f3-pace-race-v3';
 const ASSETS = [
   './',
   './index.html',

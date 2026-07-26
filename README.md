@@ -47,6 +47,16 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000`.
 
+## Deploy to GitHub Pages
+
+This repository includes a GitHub Actions workflow at `.github/workflows/deploy-pages.yml` that deploys the static site on pushes to `main`.
+
+After enabling GitHub Pages for the repository (Source: **GitHub Actions**), the app is published at:
+
+`https://kenatskyline.github.io/f3-pace-race/`
+
+When shipping new frontend updates, incrementing the service worker cache key ensures devices fetch the latest assets instead of stale cached files.
+
 ## Future expansion readiness
 
 The race state object is intentionally JSON-serializable and includes identifiers + event history so future PRs can add:
