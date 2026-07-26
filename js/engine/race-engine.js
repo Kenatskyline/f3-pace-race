@@ -22,16 +22,16 @@ export class RaceEngine {
   }
 
   logEvent(type, payload = {}) {
-    this.state.event_log.push({ type, at: Date.now(), payload });
+    this.state.eventLog.push({ type, at: Date.now(), payload });
   }
 
   getSnapshot() {
     const now = Date.now();
-    const elapsedSec = this.state.started_at ? (now - this.state.started_at) / 1000 : 0;
+    const elapsedSec = this.state.startedAt ? (now - this.state.startedAt) / 1000 : 0;
 
     const teams = this.state.teams.map((team) => {
       const distanceRemainingMiles = Math.max(0, this.state.race.totalDistanceMiles - team.distanceMiles);
-      const estFinishTime = team.finishedAt || (team.currentPaceSec > 0 ? now + (distanceRemainingMiles * team.currentPaceSec * 1000) : null);
+      const estFinishTime = this.estimateFinishTime(team, now, distanceRemainingMiles);
       const averagePaceSec = team.distanceMiles > 0 ? team.movingTimeSec / team.distanceMiles : team.currentPaceSec;
       return {
         ...team,
@@ -57,11 +57,17 @@ export class RaceEngine {
     };
   }
 
+  estimateFinishTime(team, now, distanceRemainingMiles) {
+    if (team.finishedAt) return team.finishedAt;
+    if (team.currentPaceSec <= 0) return null;
+    return now + (distanceRemainingMiles * team.currentPaceSec * 1000);
+  }
+
   startRace() {
     const now = Date.now();
     this.state.status = 'running';
-    this.state.started_at = this.state.started_at ?? now;
-    this.state.stopped_at = null;
+    this.state.startedAt = this.state.startedAt ?? now;
+    this.state.stoppedAt = null;
     this.lastTickAt = now;
     this.logEvent('race_started');
     this.beginLoop();
@@ -70,7 +76,7 @@ export class RaceEngine {
 
   stopRace() {
     this.state.status = 'stopped';
-    this.state.stopped_at = Date.now();
+    this.state.stoppedAt = Date.now();
     this.logEvent('race_stopped');
     this.endLoop();
     this.notify();
@@ -79,8 +85,8 @@ export class RaceEngine {
   resetRace() {
     const spacing = this.state.race.checkpointSpacingMiles;
     this.state.status = 'ready';
-    this.state.started_at = null;
-    this.state.stopped_at = null;
+    this.state.startedAt = null;
+    this.state.stoppedAt = null;
     this.state.teams = this.state.teams.map((team) => ({
       ...team,
       paused: false,
@@ -128,11 +134,13 @@ export class RaceEngine {
       return;
     }
 
+    const maxPaceStep = PACE_TRANSITION_RATE * deltaSec;
+
     this.state.teams.forEach((team) => {
       if (team.paused || team.finishedAt) return;
 
       const paceDiff = team.targetPaceSec - team.currentPaceSec;
-      const paceStep = clamp(paceDiff, -PACE_TRANSITION_RATE * deltaSec, PACE_TRANSITION_RATE * deltaSec);
+      const paceStep = clamp(paceDiff, -maxPaceStep, maxPaceStep);
       team.currentPaceSec += paceStep;
 
       const progressMiles = deltaSec / Math.max(1, team.currentPaceSec);
@@ -153,7 +161,7 @@ export class RaceEngine {
 
     if (this.state.teams.every((team) => team.finishedAt)) {
       this.state.status = 'results';
-      this.state.stopped_at = now;
+      this.state.stoppedAt = now;
       this.logEvent('race_finished');
       this.endLoop();
     }

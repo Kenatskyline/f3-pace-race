@@ -7,7 +7,7 @@ export function formatPace(secondsPerMile) {
 }
 
 export function formatClockTime(timestampMs) {
-  if (!Number.isFinite(timestampMs) || timestampMs <= 0) return '--:--';
+  if (!Number.isFinite(timestampMs) || timestampMs < 0) return '--:--';
   const date = new Date(timestampMs);
   let hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, '0');

@@ -8,7 +8,20 @@ import { formatPace } from '../utils/time-utils.js';
 const STORAGE_KEY = 'f3-race-director-state';
 
 function randomId(prefix) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  const token = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${prefix}-${token}`;
+}
+
+function getStatusText(status) {
+  const statusMap = {
+    results: 'Race complete',
+    running: 'Race in progress',
+    ready: 'Race ready',
+    stopped: 'Race paused/stopped'
+  };
+  return statusMap[status] ?? 'Race paused/stopped';
 }
 
 export class UIController {
@@ -92,7 +105,7 @@ export class UIController {
 
   renderResults(snapshot) {
     const top = [...snapshot.teams].sort((a, b) => b.distanceMiles - a.distanceMiles)[0];
-    const statusText = snapshot.status === 'results' ? 'Race complete' : snapshot.status === 'running' ? 'Race in progress' : 'Race paused/stopped';
+    const statusText = getStatusText(snapshot.status);
 
     this.resultsContainer.innerHTML = `
       <section class="card">
@@ -102,8 +115,8 @@ export class UIController {
         </div>
         <div class="race-meta-grid">
           <div><span class="label">Leader</span><strong>${top ? top.name : '--'}</strong></div>
-          <div><span class="label">Event log entries</span><strong>${snapshot.event_log.length}</strong></div>
-          <div><span class="label">Sync ready</span><strong>session_id + device_id</strong></div>
+          <div><span class="label">Event log entries</span><strong>${snapshot.eventLog.length}</strong></div>
+          <div><span class="label">Sync ready</span><strong>${snapshot.sessionId} + ${snapshot.deviceId}</strong></div>
         </div>
       </section>
     `;

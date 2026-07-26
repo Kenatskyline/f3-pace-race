@@ -26,39 +26,57 @@ function createTeamState(teamConfig, checkpointSpacingMiles) {
 export function createRaceState(config) {
   const now = Date.now();
   const checkpointCount = Math.max(1, Math.round(config.totalDistanceMiles / config.checkpointSpacingMiles));
+  const eventLog = [
+    {
+      type: 'race_created',
+      at: now,
+      payload: {
+        totalDistanceMiles: config.totalDistanceMiles,
+        checkpointSpacingMiles: config.checkpointSpacingMiles,
+        teamCount: config.teams.length
+      }
+    }
+  ];
 
   return {
     version: 1,
-    device_id: config.deviceId,
-    session_id: config.sessionId,
-    created_at: now,
+    deviceId: config.deviceId,
+    sessionId: config.sessionId,
+    createdAt: now,
     status: 'ready',
-    started_at: null,
-    stopped_at: null,
+    startedAt: null,
+    stoppedAt: null,
     race: {
       totalDistanceMiles: config.totalDistanceMiles,
       checkpointSpacingMiles: config.checkpointSpacingMiles,
       checkpointCount
     },
     teams: config.teams.map((team) => createTeamState(team, config.checkpointSpacingMiles)),
-    event_log: [
-      {
-        type: 'race_created',
-        at: now,
-        payload: {
-          totalDistanceMiles: config.totalDistanceMiles,
-          checkpointSpacingMiles: config.checkpointSpacingMiles,
-          teamCount: config.teams.length
-        }
-      }
-    ]
+    eventLog
   };
 }
 
 export function serializeRaceState(state) {
-  return JSON.stringify(state);
+  return JSON.stringify({
+    ...state,
+    device_id: state.deviceId,
+    session_id: state.sessionId,
+    created_at: state.createdAt,
+    started_at: state.startedAt,
+    stopped_at: state.stoppedAt,
+    event_log: state.eventLog
+  });
 }
 
 export function deserializeRaceState(payload) {
-  return JSON.parse(payload);
+  const parsed = JSON.parse(payload);
+  return {
+    ...parsed,
+    deviceId: parsed.deviceId ?? parsed.device_id,
+    sessionId: parsed.sessionId ?? parsed.session_id,
+    createdAt: parsed.createdAt ?? parsed.created_at,
+    startedAt: parsed.startedAt ?? parsed.started_at,
+    stoppedAt: parsed.stoppedAt ?? parsed.stopped_at,
+    eventLog: parsed.eventLog ?? parsed.event_log ?? []
+  };
 }

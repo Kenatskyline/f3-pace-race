@@ -22,8 +22,8 @@ export class RaceDirectorDashboard {
         </div>
         <div class="race-meta-grid">
           <div><span class="label">Elapsed</span><strong id="elapsedDisplay">${formatDuration(snapshot.elapsedSec)}</strong></div>
-          <div><span class="label">Session</span><strong>${snapshot.session_id}</strong></div>
-          <div><span class="label">Device</span><strong>${snapshot.device_id}</strong></div>
+          <div><span class="label">Session</span><strong>${snapshot.sessionId}</strong></div>
+          <div><span class="label">Device</span><strong>${snapshot.deviceId}</strong></div>
         </div>
       </section>
       <section class="team-panels" id="teamPanels"></section>
@@ -49,9 +49,9 @@ export class RaceDirectorDashboard {
           <span class="team-dot" style="background:${team.color}"></span>
         </div>
         <div class="pace-row">
-          <button class="pace-button" data-action="pace-down" type="button">− ${PACE_STEP}s</button>
+          <button class="pace-button" data-action="pace-down" type="button" aria-label="Speed up by ${PACE_STEP} seconds per mile">- ${PACE_STEP}s</button>
           <strong class="pace-value" data-role="current-pace">${formatPace(team.currentPaceSec)}</strong>
-          <button class="pace-button" data-action="pace-up" type="button">+ ${PACE_STEP}s</button>
+          <button class="pace-button" data-action="pace-up" type="button" aria-label="Slow down by ${PACE_STEP} seconds per mile">+ ${PACE_STEP}s</button>
         </div>
         <div class="team-stat-grid">
           <div><span class="label">Current distance</span><strong data-role="distance">${milesToDisplay(team.distanceMiles)}</strong></div>
@@ -71,8 +71,8 @@ export class RaceDirectorDashboard {
         </div>
       `;
 
-      panel.querySelector('[data-action="pace-down"]').addEventListener('click', () => this.callbacks.onAdjustPace(team.id, PACE_STEP));
-      panel.querySelector('[data-action="pace-up"]').addEventListener('click', () => this.callbacks.onAdjustPace(team.id, -PACE_STEP));
+      panel.querySelector('[data-action="pace-down"]').addEventListener('click', () => this.callbacks.onAdjustPace(team.id, -PACE_STEP));
+      panel.querySelector('[data-action="pace-up"]').addEventListener('click', () => this.callbacks.onAdjustPace(team.id, PACE_STEP));
       panel.querySelector('[data-action="pause-toggle"]').addEventListener('click', () => this.callbacks.onPauseToggle(team.id, !team.paused));
       panel.querySelector('[data-action="reset-team"]').addEventListener('click', () => this.callbacks.onResetTeam(team.id));
       panel.querySelector('[data-action="checkpoint-down"]').addEventListener('click', () => this.callbacks.onCheckpointChange(team.id, team.checkpointIndex - 1));

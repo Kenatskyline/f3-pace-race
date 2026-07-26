@@ -1,6 +1,19 @@
 import { clamp } from '../utils/calculations.js';
 
 const DEFAULT_COLORS = ['#00d4ff', '#ff7a7a', '#8f7aff', '#7affba'];
+const DEFAULT_TEAM_NAMES = ['Gazelles', 'Clydesdales'];
+const DEFAULT_PACE_BOUNDS = [
+  { min: 420, max: 660 },
+  { min: 540, max: 780 }
+];
+
+function getDefaultTeamName(index) {
+  return DEFAULT_TEAM_NAMES[index] ?? `Team ${index + 1}`;
+}
+
+function getDefaultPaceBounds(index) {
+  return DEFAULT_PACE_BOUNDS[index] ?? { min: 420, max: 780 };
+}
 
 export class SetupScreen {
   constructor(container, onStart) {
@@ -39,26 +52,29 @@ export class SetupScreen {
       const count = clamp(Number(teamCountInput.value) || 2, 2, 4);
       teamCountInput.value = String(count);
 
-      list.innerHTML = Array.from({ length: count }, (_, idx) => `
+      list.innerHTML = Array.from({ length: count }, (_, idx) => {
+        const paceBounds = getDefaultPaceBounds(idx);
+        return `
         <fieldset>
           <legend>Team ${idx + 1}</legend>
           <label>Name
-            <input name="teamName${idx}" type="text" value="${idx === 0 ? 'Gazelles' : idx === 1 ? 'Clydesdales' : `Team ${idx + 1}`}" required />
+            <input name="teamName${idx}" type="text" value="${getDefaultTeamName(idx)}" required />
           </label>
           <label>Color
             <input name="teamColor${idx}" type="color" value="${DEFAULT_COLORS[idx] || '#00d4ff'}" required />
           </label>
           <label>Min pace (sec/mi)
-            <input name="teamMinPace${idx}" type="number" min="300" max="1200" step="5" value="${idx === 0 ? 420 : 540}" required />
+            <input name="teamMinPace${idx}" type="number" min="300" max="1200" step="5" value="${paceBounds.min}" required />
           </label>
           <label>Max pace (sec/mi)
-            <input name="teamMaxPace${idx}" type="number" min="300" max="1200" step="5" value="${idx === 0 ? 660 : 780}" required />
+            <input name="teamMaxPace${idx}" type="number" min="300" max="1200" step="5" value="${paceBounds.max}" required />
           </label>
           <label>Override pace (sec/mi)
             <input name="teamOverridePace${idx}" type="number" min="300" max="1200" step="5" placeholder="Optional" />
           </label>
         </fieldset>
-      `).join('');
+      `;
+      }).join('');
     };
 
     renderTeamInputs();
